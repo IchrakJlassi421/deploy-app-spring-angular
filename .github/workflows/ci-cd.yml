@@ -1,6 +1,5 @@
 name: Build and Push Docker Images
 
-# Déclenchement à chaque push sur main
 on:
   push:
     branches:
@@ -8,39 +7,40 @@ on:
 
 jobs:
   docker:
-    runs-on: ubuntu-latest  # Runner Ubuntu avec Docker disponible
+    runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Récupérer le code
+      # 1️⃣ Récupérer le code source
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2️⃣ Installer Docker (sécurisé pour éviter "docker: command not found")
+      # 2️⃣ Installer Docker pour éviter "docker: command not found"
       - name: Setup Docker
         uses: docker/setup-docker@v2
         with:
-          version: "24.0.5"  # version récente de Docker
+          version: "24.0.5"
 
-      # 3️⃣ Connexion à Docker Hub
+      # 3️⃣ Connexion à Docker Hub avec vos secrets
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_ICHRAK }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # 4️⃣ Build et push backend
+      # 4️⃣ Build et push backend (springboot/app)
       - name: Build and push backend image
         uses: docker/build-push-action@v4
         with:
-          context: ./backend
-          file: ./backend/Dockerfile
+          context: ./springboot/app        # chemin vers le code backend
+          file: ./springboot/app/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKERHUB_ICHRAK }}/springboot-backend:latest
+          tags: ${{ secrets.DOCKERHUB_ICHRAK }}/springboot-app:latest
 
-      # 5️⃣ Build et push frontend
+      # 5️⃣ Build et push frontend (angular-app)
       - name: Build and push frontend image
-          file: ./frontend/Dockerfile
-          push: true
-          tags: ${{ secrets.DOCKERHUB_ICHRAK }}/angular-frontend:latest          context: ./frontend
         uses: docker/build-push-action@v4
-
+        with:
+          context: ./angular-app           # chemin vers le code frontend
+          file: ./angular-app/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKERHUB_ICHRAK }}/angular-app:latest
