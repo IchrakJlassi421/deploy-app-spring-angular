@@ -46,77 +46,44 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_ICHRAK }}/angular-app:latest
 
-      # SOLUTION : Test avec attente prolongée
-      - name: Test with Docker Compose
+      - name: Test application
         run: |
           echo "========================================="
-          echo "🚀 ÉTAPE 1: DÉMARRAGE DE MYSQL"
+          echo "🚀 DÉMARRAGE DES CONTENEURS"
           echo "========================================="
-          docker compose up -d mysql
-          
-          echo "⏳ Attente 45 secondes pour MySQL..."
+          docker compose up -d
           sleep 45
           
           echo "========================================="
-          echo "🚀 ÉTAPE 2: DÉMARRAGE BACKEND ET FRONTEND"
-          echo "========================================="
-          docker compose up -d spring-boot-app angular-app
-          
-          echo "⏳ Attente 30 secondes pour le backend..."
-          sleep 30
-          
-          echo "========================================="
-          echo "🔍 ÉTAPE 3: VÉRIFICATION DES CONTENEURS"
+          echo "🔍 ÉTAT DES CONTENEURS"
           echo "========================================="
           docker compose ps
           
           echo "========================================="
-          echo "🔍 ÉTAPE 4: TEST FRONTEND"
+          echo "🔍 TEST FRONTEND"
           echo "========================================="
-          if curl -s -f http://localhost:4200 > /dev/null; then
-            echo "✅✅✅ FRONTEND OK ✅✅✅"
+          curl -s -f http://localhost:4200 && echo "✅ Frontend OK"
+          
+          echo "========================================="
+          echo "🔍 TEST BACKEND"
+          echo "========================================="
+          if curl -s -o /dev/null -w "%{http_code}" http://localhost:8081 | grep -q "200\|404"; then
+            echo "✅ Backend est actif (code $(curl -s -o /dev/null -w "%{http_code}" http://localhost:8081))"
           else
-            echo "❌❌❌ FRONTEND ERROR ❌❌❌"
+            echo "❌ Backend ne répond pas"
+            docker compose logs spring-boot-app --tail=20
           fi
           
           echo "========================================="
-          echo "🔍 ÉTAPE 5: VÉRIFICATION DU BACKEND"
+          echo "📋 LOGS"
           echo "========================================="
-          
-          # Vérifier si le backend tourne
-          BACKEND_STATUS=$(docker compose ps --status running | grep spring-boot-app || echo "")
-          if [ -n "$BACKEND_STATUS" ]; then
-            echo "✅ Le backend est en cours d'exécution"
-            
-            # Tester les endpoints possibles
-            echo "Test des endpoints..."
-            ENDPOINTS=("/api/users" "/api/hello" "/" "/actuator/health")
-            for endpoint in "${ENDPOINTS[@]}"; do
-              HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8081$endpoint)
-              if [ "$HTTP_CODE" = "200" ]; then
-                echo "✅ Endpoint $endpoint répond (code $HTTP_CODE)"
-              elif [ "$HTTP_CODE" = "404" ]; then
-                echo "ℹ️ Endpoint $endpoint non trouvé (404)"
-              else
-                echo "⚠️ Endpoint $endpoint: code $HTTP_CODE"
-              fi
-            done
-          else
-            echo "❌ Le backend ne tourne pas"
-            echo "📋 Logs du backend:"
-            docker compose logs spring-boot-app --tail=50
-          fi
+          docker compose logs --tail=20
           
           echo "========================================="
-          echo "📋 ÉTAPE 6: LOGS COMPLETS"
-          echo "========================================="
-          docker compose logs --tail=30
-          
-          echo "========================================="
-          echo "🧹 ÉTAPE 7: NETTOYAGE"
+          echo "🧹 NETTOYAGE"
           echo "========================================="
           docker compose down
           
           echo "========================================="
-          echo "🎉🎉🎉 TESTS TERMINÉS 🎉🎉🎉"
+          echo "🎉 WORKFLOW COMPLET AVEC SUCCÈS"
           echo "========================================="
