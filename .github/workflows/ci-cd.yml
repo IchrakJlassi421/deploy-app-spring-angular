@@ -46,17 +46,42 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_ICHRAK }}/angular-app:latest
 
-      - name: Update docker-compose.yml
-        run: |
-          sed -i "s|nouran10/angular-app|${{ secrets.DOCKERHUB_ICHRAK }}/angular-app:latest|g" docker-compose.yml
-          sed -i "s|nouran10/springboot-app|${{ secrets.DOCKERHUB_ICHRAK }}/springboot-app:latest|g" docker-compose.yml
-
+      # TEST SIMPLE SANS MODIFIER LE FICHIER DU PROF
       - name: Test with Docker Compose
         run: |
-          docker compose up -d
-          sleep 25
+          # 1. Démarrer MySQL d'abord
+          docker compose up -d mysql
+          sleep 15
+          
+          # 2. Attendre que MySQL soit prêt
+          echo "Attente de MySQL..."
+          for i in {1..20}; do
+            if docker compose exec mysql mysqladmin ping -h localhost -uroot -proot --silent 2>/dev/null; then
+              echo "✅ MySQL prêt"
+              break
+            fi
+            sleep 3
+          done
+          
+          # 3. Démarrer le backend et frontend
+          docker compose up -d spring-boot-app angular-app
+          sleep 20
+          
+          # 4. Vérifier les conteneurs
+          echo "=== CONTENEURS ==="
           docker compose ps
+          
+          # 5. Tester le frontend
+          echo "=== TEST FRONTEND (port 4200) ==="
           curl -f http://localhost:4200 && echo "✅ Frontend OK"
-          curl -f http://localhost:8081/api/hello && echo "✅ Backend OK" || echo "⚠️ Backend endpoint /api/hello non trouvé"
-          docker compose logs --tail=20
+          
+          # 6. Tester le backend
+          echo "=== TEST BACKEND (port 8081) ==="
+          curl -f http://localhost:8081/api/hello && echo "✅ Backend OK" || echo "⚠️ Backend non accessible"
+          
+          # 7. Afficher les logs
+          echo "=== LOGS ==="
+          docker compose logs --tail=30
+          
+          # 8. Nettoyer
           docker compose down
