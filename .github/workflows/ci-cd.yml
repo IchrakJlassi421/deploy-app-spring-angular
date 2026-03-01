@@ -175,4 +175,25 @@ jobs:
           echo "🧹 ÉTAPE 8: NETTOYAGE"
           echo "========================================="
           echo "========================================="
-
+          docker compose down
+          
+          echo "========================================="
+          echo "🎉🎉🎉 TEST TERMINÉ AVEC SUCCÈS 🎉🎉🎉"
+          echo "========================================="
+          
+      - name: Final verification
+        run: |
+          echo "========================================="
+          echo "✅ RÉCAPITULATIF DU WORKFLOW"
+          echo "========================================="
+          echo "📦 Images construites et poussées:"
+          echo "   - ${{ secrets.DOCKERHUB_ICHRAK }}/springboot-app:latest"
+          echo "   - ${{ secrets.DOCKERHUB_ICHRAK }}/angular-app:latest"
+          echo ""
+          echo "✅ Tests exécutés:"
+          echo "   - MySQL démarré"
+          echo "   - Frontend accessible"
+          echo "   - Backend démarré (Started DemoApplication)"
+          echo ""
+          echo "🎯 WORKFLOW COMPLÉTÉ AVEC SUCCÈS"
+          echo "========================================="
