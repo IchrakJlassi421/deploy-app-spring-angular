@@ -50,24 +50,24 @@ jobs:
           file: ./angular-app/Dockerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_ICHRAK }}/angular-app:latest
-- name: Test with Docker Compose
-  run: |
-    docker-compose up -d
-    sleep 25
+     - name: Test with Docker Compose
+       run: |
+          docker-compose up -d
+          sleep 25
     
-    echo "=== VÉRIFICATION DES CONTENEURS ==="
-    docker-compose ps
+          echo "=== VÉRIFICATION DES CONTENEURS ==="
+          docker-compose ps
     
-    echo "=== TEST BACKEND (port 8081) ==="
-    curl -f http://localhost:8081/actuator/health && echo "✅ Backend OK"
+          echo "=== TEST BACKEND (port 8081) ==="
+          curl -f http://localhost:8081/actuator/health && echo "✅ Backend OK"
     
-    echo "=== TEST FRONTEND (port 4200) ==="
-    curl -f http://localhost:4200 && echo "✅ Frontend OK"
+          echo "=== TEST FRONTEND (port 4200) ==="
+          curl -f http://localhost:4200 && echo "✅ Frontend OK"
     
-    echo "=== TEST API ==="
-    curl -f http://localhost:8081/api/hello && echo "✅ API OK"
+          echo "=== TEST API ==="
+          curl -f http://localhost:8081/api/hello && echo "✅ API OK"
     
-    echo "=== LOGS ==="
-    docker-compose logs --tail=20
+          echo "=== LOGS ==="
+          docker-compose logs --tail=20
     
-    docker-compose down
+          docker-compose down
