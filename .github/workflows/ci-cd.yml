@@ -1,4 +1,6 @@
-Déclenchement à chaque push sur la branche main
+name: Build and Push Docker Images
+
+# Déclenchement à chaque push sur main
 on:
   push:
     branches:
@@ -6,10 +8,39 @@ on:
 
 jobs:
   docker:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # Runner Ubuntu avec Docker disponible
 
     steps:
-      # 1️⃣ Récupérer le code du dépôt
+      # 1️⃣ Récupérer le code
       - name: Checkout repository
         uses: actions/checkout@v3
+
+      # 2️⃣ Installer Docker (sécurisé pour éviter "docker: command not found")
+      - name: Setup Docker
+        uses: docker/setup-docker@v2
+        with:
+          version: "24.0.5"  # version récente de Docker
+
+      # 3️⃣ Connexion à Docker Hub
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_ICHRAK }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # 4️⃣ Build et push backend
+      - name: Build and push backend image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKERHUB_ICHRAK }}/springboot-backend:latest
+
+      # 5️⃣ Build et push frontend
+      - name: Build and push frontend image
+          file: ./frontend/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKERHUB_ICHRAK }}/angular-frontend:latest          context: ./frontend
+        uses: docker/build-push-action@v4
 
