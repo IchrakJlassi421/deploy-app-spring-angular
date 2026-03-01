@@ -38,3 +38,7 @@ jobs:
           file: ./angular-app/Dockerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_ICHRAK }}/angular-app:latest
+- name: Debug secrets
+  run: |
+    echo "Username secret exists: ${{ secrets.DOCKERHUB_ICHRAK != '' }}"
+    echo "Token secret exists: ${{ secrets.DOCKERHUB_TOKEN4 != '' }}"
