@@ -45,7 +45,16 @@ jobs:
           file: ./angular-app/Dockerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_ICHRAK }}/angular-app:latest
-
+       # 🔴 ÉTAPE CRUCIALE : Utiliser VOS images pour le test
+      - name: Use your own images for testing
+        run: |
+          echo "========================================="
+          echo "🔄 REMPLACEMENT DES IMAGES DANS DOCKER-COMPOSE"
+          echo "========================================="
+          sed -i "s|nouran10/angular-app|${{ secrets.DOCKERHUB_ICHRAK }}/angular-app:latest|g" docker-compose.yml
+          sed -i "s|nouran10/springboot-app|${{ secrets.DOCKERHUB_ICHRAK }}/springboot-app:latest|g" docker-compose.yml
+          echo "✅ docker-compose.yml modifié :"
+          cat docker-compose.yml
       - name: Test application
         run: |
           echo "========================================="
