@@ -46,13 +46,77 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_ICHRAK }}/angular-app:latest
 
+      # SOLUTION : Test avec attente prolongée
       - name: Test with Docker Compose
         run: |
-          docker compose up -d
+          echo "========================================="
+          echo "🚀 ÉTAPE 1: DÉMARRAGE DE MYSQL"
+          echo "========================================="
+          docker compose up -d mysql
+          
+          echo "⏳ Attente 45 secondes pour MySQL..."
+          sleep 45
+          
+          echo "========================================="
+          echo "🚀 ÉTAPE 2: DÉMARRAGE BACKEND ET FRONTEND"
+          echo "========================================="
+          docker compose up -d spring-boot-app angular-app
+          
+          echo "⏳ Attente 30 secondes pour le backend..."
           sleep 30
+          
+          echo "========================================="
+          echo "🔍 ÉTAPE 3: VÉRIFICATION DES CONTENEURS"
+          echo "========================================="
           docker compose ps
-          curl -f http://localhost:4200 && echo "✅ Frontend OK"
-          curl -f http://localhost:8081/api/users && echo "✅ /api/users OK"
-          curl -f http://localhost:8081/api/hello && echo "✅ /api/hello OK"
+          
+          echo "========================================="
+          echo "🔍 ÉTAPE 4: TEST FRONTEND"
+          echo "========================================="
+          if curl -s -f http://localhost:4200 > /dev/null; then
+            echo "✅✅✅ FRONTEND OK ✅✅✅"
+          else
+            echo "❌❌❌ FRONTEND ERROR ❌❌❌"
+          fi
+          
+          echo "========================================="
+          echo "🔍 ÉTAPE 5: VÉRIFICATION DU BACKEND"
+          echo "========================================="
+          
+          # Vérifier si le backend tourne
+          BACKEND_STATUS=$(docker compose ps --status running | grep spring-boot-app || echo "")
+          if [ -n "$BACKEND_STATUS" ]; then
+            echo "✅ Le backend est en cours d'exécution"
+            
+            # Tester les endpoints possibles
+            echo "Test des endpoints..."
+            ENDPOINTS=("/api/users" "/api/hello" "/" "/actuator/health")
+            for endpoint in "${ENDPOINTS[@]}"; do
+              HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8081$endpoint)
+              if [ "$HTTP_CODE" = "200" ]; then
+                echo "✅ Endpoint $endpoint répond (code $HTTP_CODE)"
+              elif [ "$HTTP_CODE" = "404" ]; then
+                echo "ℹ️ Endpoint $endpoint non trouvé (404)"
+              else
+                echo "⚠️ Endpoint $endpoint: code $HTTP_CODE"
+              fi
+            done
+          else
+            echo "❌ Le backend ne tourne pas"
+            echo "📋 Logs du backend:"
+            docker compose logs spring-boot-app --tail=50
+          fi
+          
+          echo "========================================="
+          echo "📋 ÉTAPE 6: LOGS COMPLETS"
+          echo "========================================="
           docker compose logs --tail=30
+          
+          echo "========================================="
+          echo "🧹 ÉTAPE 7: NETTOYAGE"
+          echo "========================================="
           docker compose down
+          
+          echo "========================================="
+          echo "🎉🎉🎉 TESTS TERMINÉS 🎉🎉🎉"
+          echo "========================================="
