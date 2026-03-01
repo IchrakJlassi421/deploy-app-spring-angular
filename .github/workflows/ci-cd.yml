@@ -147,33 +147,13 @@ jobs:
             fi
           done
           
-          echo "✅ Tests exécutés:"
-          echo "   - Frontend accessible"
-          echo "   - Backend démarré (Started DemoApplication)"
-          echo ""
-          echo "========================================="          echo "🎯 WORKFLOW COMPLÉTÉ AVEC SUCCÈS"
-          echo "   - MySQL démarré"
-          echo ""
-          echo "   - ${{ secrets.DOCKERHUB_ICHRAK }}/angular-app:latest"
           echo "========================================="
-          echo "   - ${{ secrets.DOCKERHUB_ICHRAK }}/springboot-app:latest"
-          echo "📦 Images construites et poussées:"
+          echo "📋 ÉTAPE 7: LOGS COMPLETS (fin)"
+          echo "========================================="
           docker compose logs --tail=30
-          echo "========================================="
-          echo "✅ RÉCAPITULATIF DU WORKFLOW"
-        run: |
-          echo "========================================="
-      - name: Final verification
-          
           
           echo "========================================="
-          echo "========================================="
-          echo "🎉🎉🎉 TEST TERMINÉ AVEC SUCCÈS 🎉🎉🎉"
-          
-          echo "========================================="
-          docker compose down
           echo "🧹 ÉTAPE 8: NETTOYAGE"
-          echo "========================================="
           echo "========================================="
           docker compose down
           
@@ -196,4 +176,4 @@ jobs:
           echo "   - Backend démarré (Started DemoApplication)"
           echo ""
           echo "🎯 WORKFLOW COMPLÉTÉ AVEC SUCCÈS"
-          echo "========================================="
+          echo "=========================================" 
