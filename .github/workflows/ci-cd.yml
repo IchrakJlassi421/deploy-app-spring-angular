@@ -63,6 +63,24 @@ jobs:
           echo "-----------------------------------------"
           cat docker-compose.yml
           echo "-----------------------------------------"
+      - name: Debug backend error
+        run: |
+          echo "========================================="
+          echo "🔍 DÉMARRAGE DU BACKEND SEUL"
+          echo "========================================="
+          docker compose up -d mysql
+          sleep 15
+          docker compose up -d spring-boot-app
+          sleep 10
+          echo "========================================="
+          echo "📋 LOGS DU BACKEND (ERREUR)"
+          echo "========================================="
+          docker compose logs spring-boot-app --tail=100
+          echo "========================================="
+          echo "🧹 NETTOYAGE"
+          echo "========================================="
+          docker compose down
+
 
       - name: Test with Docker Compose
         run: |
