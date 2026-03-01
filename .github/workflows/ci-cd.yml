@@ -1,6 +1,4 @@
-name: Build and Push Docker Images
-
-# Déclenchement à chaque push sur la branche main
+Déclenchement à chaque push sur la branche main
 on:
   push:
     branches:
@@ -15,27 +13,3 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2️⃣ Se connecter à Docker Hub avec vos secrets
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_ICHRAK }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      # 3️⃣ Build et push de l'image backend
-      - name: Build and push backend image
-        uses: docker/build-push-action@v4
-        with:
-          context: ./backend           # chemin vers Dockerfile backend
-          file: ./backend/Dockerfile
-          push: true
-          tags: ${{ secrets.DOCKERHUB_ICHRAK }}/springboot-backend:latest
-
-      # 4️⃣ Build et push de l'image frontend
-      - name: Build and push frontend image
-        uses: docker/build-push-action@v4
-        with:
-          context: ./frontend          # chemin vers Dockerfile frontend
-          file: ./frontend/Dockerfile
-          push: true
-          tags: ${{ secrets.DOCKERHUB_ICHRAK }}/angular-frontend:latest
