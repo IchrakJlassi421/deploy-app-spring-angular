@@ -46,93 +46,13 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_ICHRAK }}/angular-app:latest
 
-       - name: Test with Docker Compose
-         run: |
-          echo "========================================="
-          echo "🚀 DÉMARRAGE DE MYSQL"
-          echo "========================================="
-          docker compose up -d mysql
-          sleep 15
-          
-          echo "========================================="
-          echo "⏳ ATTENTE DE MYSQL"
-          echo "========================================="
-          for i in {1..20}; do
-            if docker compose exec mysql mysqladmin ping -h localhost -uroot -proot --silent 2>/dev/null; then
-              echo "✅ MySQL prêt"
-              break
-            fi
-            echo "⏳ En attente... $i/20"
-            sleep 3
-          done
-          
-          echo "========================================="
-          echo "🚀 DÉMARRAGE BACKEND ET FRONTEND"
-          echo "========================================="
-          docker compose up -d spring-boot-app angular-app
-          sleep 25
-          
-          echo "========================================="
-          echo "🔍 VÉRIFICATION DES CONTENEURS"
-          echo "========================================="
+      - name: Test with Docker Compose
+        run: |
+          docker compose up -d
+          sleep 30
           docker compose ps
-          
-          echo "========================================="
-          echo "🔍 TEST FRONTEND (port 4200)"
-          echo "========================================="
-          if curl -s -f http://localhost:4200 > /dev/null; then
-            echo "✅✅✅ FRONTEND OK ✅✅✅"
-          else
-            echo "❌❌❌ FRONTEND ERROR ❌❌❌"
-            docker compose logs angular-app --tail=20
-          fi
-          
-          echo "========================================="
-          echo "🔍 TEST ENDPOINTS BACKEND SPÉCIFIQUES"
-          echo "========================================="
-          
-          # Liste des endpoints à tester (trouvés dans UserController)
-          ENDPOINTS=(
-            "/api/users"
-            "/api/users/hello"
-            "/api/hello"
-            "/api"
-            "/"
-          )
-          
-          FOUND=0
-          for endpoint in "${ENDPOINTS[@]}"; do
-            echo "🔍 Test: http://localhost:8081$endpoint"
-            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8081$endpoint)
-            if [ "$HTTP_CODE" = "200" ]; then
-              echo "✅✅✅ ENDPOINT FONCTIONNE: $endpoint (code $HTTP_CODE) ✅✅✅"
-              RESPONSE=$(curl -s http://localhost:8081$endpoint)
-              echo "📦 Réponse: $RESPONSE"
-              FOUND=1
-              # Ne pas break pour tester tous les endpoints
-            elif [ "$HTTP_CODE" = "404" ]; then
-              echo "  Endpoint non trouvé (404)"
-            else
-              echo "  Réponse: code $HTTP_CODE"
-            fi
-          done
-          
-          if [ $FOUND -eq 0 ]; then
-            echo "❌❌❌ AUCUN ENDPOINT TROUVÉ SUR LE BACKEND ❌❌❌"
-            echo "📋 Logs du backend:"
-            docker compose logs spring-boot-app --tail=50
-          else
-          echo "========================================="
-          docker compose logs --tail=50
-
-          
-          echo "========================================="
-
-          echo "🧹 ARRÊT DES CONTENEURS"
-          echo "========================================="
+          curl -f http://localhost:4200 && echo "✅ Frontend OK"
+          curl -f http://localhost:8081/api/users && echo "✅ /api/users OK"
+          curl -f http://localhost:8081/api/hello && echo "✅ /api/hello OK"
+          docker compose logs --tail=30
           docker compose down
-          
-          echo "========================================="
-
-          echo "🎉🎉🎉 TESTS TERMINÉS 🎉🎉🎉"
-          echo "========================================="
