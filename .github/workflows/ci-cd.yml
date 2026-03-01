@@ -55,30 +55,28 @@ jobs:
           sed -i "s|nouran10/springboot-app|${{ secrets.DOCKERHUB_ICHRAK }}/springboot-app:latest|g" docker-compose.yml
           echo "✅ docker-compose.yml modifié :"
           cat docker-compose.yml
-      - name: Test application
+      - name: Test and discover endpoints
         run: |
           echo "========================================="
-          echo "🚀 ÉTAPE 1: DÉMARRAGE DE MYSQL SEUL"
+          echo "🚀 DÉMARRAGE DE MYSQL"
           echo "========================================="
           docker compose up -d mysql
+          sleep 15
           
-          echo "⏳ Attente que MySQL soit complètement prêt..."
-          for i in {1..30}; do
+          echo "⏳ Attente de MySQL..."
+          for i in {1..20}; do
             if docker compose exec mysql mysqladmin ping -h localhost -uroot -proot --silent 2>/dev/null; then
-              echo "✅ MySQL prêt après $i secondes"
+              echo "✅ MySQL prêt"
               break
             fi
-            echo "⏳ En attente de MySQL... $i/30"
-            sleep 3
+            sleep 2
           done
           
           echo "========================================="
-          echo "🚀 ÉTAPE 2: DÉMARRAGE BACKEND ET FRONTEND"
+          echo "🚀 DÉMARRAGE BACKEND ET FRONTEND"
           echo "========================================="
           docker compose up -d spring-boot-app angular-app
-          
-          echo "⏳ Attente du démarrage (20 secondes)..."
-          sleep 20
+          sleep 25
           
           echo "========================================="
           echo "🔍 ÉTAT DES CONTENEURS"
@@ -91,9 +89,47 @@ jobs:
           curl -f http://localhost:4200 && echo "✅ Frontend OK"
           
           echo "========================================="
-          echo "🔍 LOGS DU BACKEND"
+          echo "🔍 RECHERCHE DES ENDPOINTS BACKEND"
           echo "========================================="
-          docker compose logs spring-boot-app --tail=50
+          
+          ENDPOINTS=(
+            "/"
+            "/api"
+            "/api/hello"
+            "/api/users"
+            "/hello"
+            "/users"
+            "/actuator"
+            "/actuator/health"
+            "/health"
+            "/info"
+            "/test"
+          )
+          
+          FOUND=0
+          for endpoint in "${ENDPOINTS[@]}"; do
+            echo -n "🔍 Test: http://localhost:8081$endpoint ... "
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8081$endpoint)
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "✅ TROUVÉ (code $HTTP_CODE)"
+              echo "   Réponse: $(curl -s http://localhost:8081$endpoint | head -c 100)"
+              FOUND=1
+            elif [ "$HTTP_CODE" = "404" ]; then
+              echo "❌ Non trouvé (404)"
+            else
+              echo "⚠️ Code $HTTP_CODE"
+            fi
+          done
+          
+          if [ $FOUND -eq 1 ]; then
+            echo "========================================="
+            echo "✅✅✅ AU MOINS UN ENDPOINT FONCTIONNE ✅✅✅"
+          else
+            echo "========================================="
+            echo "❌❌❌ AUCUN ENDPOINT TROUVÉ ❌❌❌"
+            echo "📋 Logs du backend:"
+            docker compose logs spring-boot-app --tail=50
+          fi
           
           echo "========================================="
           echo "🧹 NETTOYAGE"
