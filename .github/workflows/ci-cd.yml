@@ -1,4 +1,4 @@
-name: Build and Push Docker Images
+name: Déclencheur et récupération du code
 
 on:
   push:
@@ -46,134 +46,44 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_ICHRAK }}/angular-app:latest
 
-      # 🔴 REMPLACER LES IMAGES DANS DOCKER-COMPOSE
       - name: Use your own images for testing
         run: |
-          echo "========================================="
-          echo "🔄 REMPLACEMENT DES IMAGES DANS DOCKER-COMPOSE"
-          echo "========================================="
           sed -i "s|nouran10/angular-app|${{ secrets.DOCKERHUB_ICHRAK }}/angular-app:latest|g" docker-compose.yml
-          sed -i "s|nouran10/springboot-app|${{ secrets.DOCKERHUB_ICHRAK }}/springboot-app:latest|g" docker-compose.yml
-          echo "✅ docker-compose.yml modifié avec vos images"
-          echo "----------------------------------------"
+          sed -i "s|nouran10/springboot-app|${{ secrets.DOCKERHUB_ICHRAK }}/springboot-app:latest|g" 
+docker-compose.yml
           cat docker-compose.yml
-          echo "----------------------------------------"
 
-      # 🔴 TEST COMPLET DE L'APPLICATION
       - name: Test application
         run: |
-          echo "========================================="
-          echo "🚀 ÉTAPE 1: DÉMARRAGE DE MYSQL"
-          echo "========================================="
           docker compose up -d mysql
-          
-          echo "⏳ Attente de MySQL..."
           for i in {1..20}; do
             if docker compose exec mysql mysqladmin ping -h localhost -uroot -proot --silent 2>/dev/null; then
-              echo "✅ MySQL prêt après $i secondes"
+              echo "MySQL prêt "
               break
             fi
-            echo "⏳ En attente de MySQL... $i/20"
+            echo "En attente de MySQL"
             sleep 2
           done
-          
-          echo "========================================="
-          echo "🚀 ÉTAPE 2: DÉMARRAGE BACKEND ET FRONTEND"
-          echo "========================================="
           docker compose up -d spring-boot-app angular-app
-          
-          echo "⏳ Attente du démarrage (20 secondes)..."
           sleep 20
-          
-          echo "========================================="
-          echo "🔍 ÉTAPE 3: ÉTAT DES CONTENEURS"
-          echo "========================================="
           docker compose ps
-          
-          echo "========================================="
-          echo "🔍 ÉTAPE 4: TEST FRONTEND"
-          echo "========================================="
           if curl -s -f http://localhost:4200 > /dev/null; then
-            echo "✅✅✅ FRONTEND OK - Accessible sur port 4200 ✅✅✅"
+            echo "FRONTEND OK"
           else
-            echo "❌❌❌ FRONTEND ERROR ❌❌❌"
+            echo "FRONTEND ERROR"
             docker compose logs angular-app --tail=20
           fi
-          
-          echo "========================================="
-          echo "🔍 ÉTAPE 5: TEST BACKEND (VÉRIFICATION DÉMARRAGE)"
-          echo "========================================="
-          
-          # Vérifier si le backend a démarré
           BACKEND_LOGS=$(docker compose logs spring-boot-app)
-          
           if echo "$BACKEND_LOGS" | grep -q "Started DemoApplication"; then
-            echo "✅✅✅ BACKEND DÉMARRÉ AVEC SUCCÈS ✅✅✅"
-            echo "   -> L'application Spring Boot a démarré complètement"
+            echo "BACKEND DÉMARRÉ AVEC SUCCÈs"
+            echo " L'application Spring Boot a démarré complètement"
           else
-            echo "❌❌❌ BACKEND NON DÉMARRÉ ❌❌❌"
+            echo "BACKEND NON DÉMARRÉ "
             echo "📋 Dernières lignes des logs:"
             docker compose logs spring-boot-app --tail=30
           fi
-          
-          # Afficher la ligne exacte du démarrage
-          echo ""
-          echo "📋 Ligne de démarrage du backend:"
-          echo "$BACKEND_LOGS" | grep "Started DemoApplication" || echo "   (ligne non trouvée)"
-          
-          echo "========================================="
-          echo "🔍 ÉTAPE 6: RECHERCHE DES ENDPOINTS (optionnel)"
-          echo "========================================="
-          
-          ENDPOINTS=(
-            "/"
-            "/api"
-            "/api/hello"
-            "/api/users"
-            "/hello"
-            "/users"
-            "/actuator/health"
-          )
-          
-          for endpoint in "${ENDPOINTS[@]}"; do
-            echo -n "🔍 Test: http://localhost:8081$endpoint ... "
-            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8081$endpoint)
-            if [ "$HTTP_CODE" = "200" ]; then
-              echo "✅ TROUVÉ (code $HTTP_CODE)"
-            elif [ "$HTTP_CODE" = "404" ]; then
-              echo "❌ Non trouvé (404)"
-            else
-              echo "⚠️ Code $HTTP_CODE"
-            fi
-          done
-          
-          echo "========================================="
-          echo "📋 ÉTAPE 7: LOGS COMPLETS (fin)"
-          echo "========================================="
+ 
           docker compose logs --tail=30
-          
-          echo "========================================="
-          echo "🧹 ÉTAPE 8: NETTOYAGE"
-          echo "========================================="
           docker compose down
-          
-          echo "========================================="
-          echo "🎉🎉🎉 TEST TERMINÉ AVEC SUCCÈS 🎉🎉🎉"
-          echo "========================================="
-          
-      - name: Final verification
-        run: |
-          echo "========================================="
-          echo "✅ RÉCAPITULATIF DU WORKFLOW"
-          echo "========================================="
-          echo "📦 Images construites et poussées:"
-          echo "   - ${{ secrets.DOCKERHUB_ICHRAK }}/springboot-app:latest"
-          echo "   - ${{ secrets.DOCKERHUB_ICHRAK }}/angular-app:latest"
-          echo ""
-          echo "✅ Tests exécutés:"
-          echo "   - MySQL démarré"
-          echo "   - Frontend accessible"
-          echo "   - Backend démarré (Started DemoApplication)"
-          echo ""
-          echo "🎯 WORKFLOW COMPLÉTÉ AVEC SUCCÈS"
-          echo "=========================================" 
+
+
