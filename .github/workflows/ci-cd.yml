@@ -47,12 +47,10 @@ jobs:
           tags: ${{ secrets.DOCKERHUB_ICHRAK }}/angular-app:latest
 
       
-      - name: Use your own images for testing
+      - name: Use your own images
         run: |
-          sed -i "s|nouran10/angular-app|${{ secrets.DOCKERHUB_ICHRAK }}/angular-app:latest|>
-          sed -i "s|nouran10/springboot-app|${{ secrets.DOCKERHUB_ICHRAK }}/springboot-app:l>
-
-          cat docker-compose.yml
+          sed -i "s|nouran10/angular-app|${{ secrets.DOCKERHUB_ICHRAK }}/angular-app:latest|g" docker-compose.yml
+          sed -i "s|nouran10/springboot-app|${{ secrets.DOCKERHUB_ICHRAK }}/springboot-app:latest|g" docker-compose.yml
 
 
       - name: Test application
